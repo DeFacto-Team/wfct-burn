@@ -22,23 +22,37 @@ import {
 
 import { CopyIcon, ExternalLinkIcon } from '@chakra-ui/icons'
 
+import Web3 from 'web3';
 import { useWeb3React } from "@web3-react/core";
 import { connectors } from "./connectors";
-import { truncateAddress } from "./utils";
+import { truncateAddress, web3BNToFloatString } from "./utils";
+import BigNumber from 'bignumber.js'
+   
+import ERC20ABI from './abi-erc20.json'
 
 import logo from './logo.svg';
 
 function App() {
 
+  let contract = [];
+  contract[1] = '0x415acc3c6636211e67e248dc28400b452acefa68';
+  contract[3] = '0x003c29cf67bc98a978cf97a2893b122f7a798239';
+
   const {
     account,
     activate,
     deactivate,
-    active
+    library,
+    active,
+    chainId
   } = useWeb3React();
 
   const [error, setError] = useState("");
   const [balance, setBalance] = useState(0);
+  const [balance2, setBalance2] = useState(0);
+  const [value, setValue] = React.useState("");
+
+  const handleChange = (event) => setValue(event.target.value);
 
   const CircleIcon = (props) => (
     <Icon viewBox='0 0 200 200' {...props}>
@@ -55,18 +69,48 @@ function App() {
 
   const refreshState = () => {
     window.localStorage.setItem("provider", undefined);
-    setBalance(0);
     setError("");
   };
 
+  const getBalance = (address) => {
+    const contract = getContract(library, ERC20ABI, address);
+    contract.methods.balanceOf(account).call().then(balance_ => {
+      const pow = new BigNumber('10').pow(new BigNumber(8))
+      setBalance(web3BNToFloatString(balance_, pow, 8, BigNumber.ROUND_DOWN))
+      setBalance2(web3BNToFloatString(balance_, pow, 2, BigNumber.ROUND_DOWN))
+    })
+  };
+
+  const getContract = (library, abi, address) => {
+    const web3 = new Web3(library.provider);
+    return new web3.eth.Contract(abi, address)
+  };
+  
   const disconnect = () => {
     refreshState();
     deactivate();
   };
 
+  const connect = () => {
+      activate(connectors.injected);
+      setProvider("injected");
+  }
+
+  useEffect(() => {
+    if (account) {
+      let cid = 1;
+      if (chainId) {
+        cid = chainId;
+      }
+      getBalance(contract[cid]);
+    }
+  }, [account, chainId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     const provider = window.localStorage.getItem("provider");
-    if (provider) activate(connectors[provider]);
+    if (provider) {
+      activate(connectors[provider]);
+    }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
@@ -82,13 +126,10 @@ function App() {
             <Spacer />
             <Box align='right'>
               {!active ? (
-                <Button size='lg' colorScheme='gray' onClick={() => {
-                  activate(connectors.injected);
-                  setProvider("injected");
-                }}>Connect Wallet</Button>
+                <Button size='lg' colorScheme='gray' onClick={() => connect()}>Connect Wallet</Button>
               ) :
                 <div>
-                <Button size='lg' colorScheme='gray' variant='outline' mb={3}>{balance} WFCT</Button>
+                <Button onClick={() => setValue(balance)} size='lg' colorScheme='gray' variant='outline' mb={3}>{balance2} WFCT</Button>
                 <Menu>
                   <MenuButton as={Button} size='lg' colorScheme='gray' mb={3} ml={3} leftIcon={<CircleIcon color='#48BB78' />}>{account ? truncateAddress(account) : "Connected"}</MenuButton>
                   <MenuList className="address-menu">
@@ -115,14 +156,14 @@ function App() {
               </Box>
               <Box px={15}>
                 <Text fontSize='2xl' my={4} color='gray'>How much WFCT do you want to convert?</Text>
-                <Input variant='filled' placeholder='Amount of tokens' size='lg' width={300} mr={4} />WFCT
+                <Input onChange={handleChange} value={value} variant='filled' placeholder='Amount of tokens' size='lg' style={{ maxWidth: '400px', width: '100%' }} />
                 <p>
-                  <Link color='#3182ce'><Text my={2} fontSize='sm'>Available balance: {balance} WFCT</Text></Link>
+                  <Link color='#3182ce' onClick={() => setValue(balance)}><Text my={2} fontSize='sm'>Available balance: {balance} WFCT</Text></Link>
                 </p>
               </Box>
               <Box px={15}>
                 <Text fontSize='2xl' my={4} color='gray'>Where to send ACME?</Text>
-                <Input variant='filled' placeholder='Accumulate ACME token account' size='lg' width={400} />
+                <Input variant='filled' placeholder='Accumulate ACME token account' size='lg' style={{ maxWidth: '400px', width: '100%' }} />
                 <p>
                   <Link color='#3182ce' isExternal href="https://docs.accumulatenetwork.io"><Text my={2} fontSize='sm'>How to generate ACME token account<ExternalLinkIcon ml={1} mb={1} /></Text></Link>
                 </p>
