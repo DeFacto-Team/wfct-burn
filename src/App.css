@@ -1,4 +1,12 @@
 .logo {
-    max-width: 80%;
-    max-height: 75px;
+    height: 40px;
+}
+
+.address-menu svg {
+    color: #999;
+    margin-right: 8px;
+}
+
+.address-menu a:hover {
+    text-decoration: none;
 }
