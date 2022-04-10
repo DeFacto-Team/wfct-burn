@@ -24,7 +24,7 @@
     "web3": "^1.7.3"
   },
   "scripts": {
-    "start": "INFURA_KEY='ce00a5d15eb5426faec60a35220c6792' react-scripts start",
+    "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
