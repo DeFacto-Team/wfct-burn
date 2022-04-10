@@ -55,7 +55,7 @@ function App() {
 
   const [appError, setAppError] = useState("");
   const [balance, setBalance] = useState(0);
-  const [balance2, setBalance2] = useState(0);
+  const [balance2, setBalance2] = useState("...");
   const [value, setValue] = React.useState("");
 
   const handleChange = (event) => setValue(event.target.value);
@@ -103,6 +103,8 @@ function App() {
   }
 
   useEffect(() => {
+    setBalance(0);
+    setBalance2("...");
     if (account) {
       let cid = 1;
       if (chainId) {
@@ -130,7 +132,7 @@ function App() {
               <img src={logo} className="logo" alt="Logo" />
             </Box>
             <Spacer />
-            <Box align='right'>
+            <Box align='right' className="menu">
               {!active ? (
                 <Button size='lg' colorScheme='gray' onClick={() => connect()} mb={3}>Connect Wallet</Button>
               ) :
@@ -142,7 +144,16 @@ function App() {
                   ) :
                     null
                   }
-                  <Button onClick={() => setValue(balance)} size='lg' colorScheme='gray' variant='outline' mb={3} ml={chainId === 3 ? ( 3 ) : null}>{balance2} WFCT</Button>
+                  <Tooltip label='View in explorer' fontSize='md'>
+                    <Link href={
+                          chainId === 3 ? (
+                            'https://ropsten.etherscan.io/token/' + contract[3] + '?a=' + account
+                          ) :
+                            'https://etherscan.io/token/' + contract[1] + '?a=' + account
+                          } isExternal>
+                      <Button size='lg' colorScheme='gray' variant='outline' mb={3} ml={chainId === 3 ? ( 3 ) : null}>{balance2} WFCT<ExternalLinkIcon ml={2} /></Button>
+                    </Link>
+                  </Tooltip>
                   <Menu>
                     <MenuButton as={Button} size='lg' colorScheme='gray' mb={3} ml={3} leftIcon={<CircleIcon color='#48BB78' />}>{account ? truncateAddress(account) : "Connected"}</MenuButton>
                     <MenuList className="address-menu">

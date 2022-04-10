@@ -2,11 +2,11 @@
     height: 40px;
 }
 
-.address-menu svg {
-    color: #999;
-    margin-right: 8px;
+.menu a:hover {
+    text-decoration: none;
 }
 
-.address-menu a:hover {
-    text-decoration: none;
+.menu .address-menu svg {
+    color: #999;
+    margin-right: 8px;
 }
