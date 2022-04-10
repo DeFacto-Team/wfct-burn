@@ -21,7 +21,8 @@ import {
   Alert,
   AlertIcon,
   AlertTitle,
-  AlertDescription
+  AlertDescription,
+  Tooltip
 } from '@chakra-ui/react';
 
 import { CopyIcon, ExternalLinkIcon } from '@chakra-ui/icons'
@@ -134,12 +135,24 @@ function App() {
                 <Button size='lg' colorScheme='gray' onClick={() => connect()} mb={3}>Connect Wallet</Button>
               ) :
                 <div>
-                  <Button onClick={() => setValue(balance)} size='lg' colorScheme='gray' variant='outline' mb={3}>{balance2} WFCT</Button>
+                  {chainId === 3 ? (
+                    <Tooltip label='You are connected to testnet' fontSize='md'>
+                      <Button size='lg' colorScheme='orange' variant='outline' mb={3}>Ropsten Testnet</Button>
+                    </Tooltip>
+                  ) :
+                    null
+                  }
+                  <Button onClick={() => setValue(balance)} size='lg' colorScheme='gray' variant='outline' mb={3} ml={chainId === 3 ? ( 3 ) : null}>{balance2} WFCT</Button>
                   <Menu>
                     <MenuButton as={Button} size='lg' colorScheme='gray' mb={3} ml={3} leftIcon={<CircleIcon color='#48BB78' />}>{account ? truncateAddress(account) : "Connected"}</MenuButton>
                     <MenuList className="address-menu">
                       <MenuItem onClick={() => {navigator.clipboard.writeText(account)}}><CopyIcon />Copy address</MenuItem>
-                      <MenuItem><Link href={'https://etherscan.io/address/' + account} isExternal><ExternalLinkIcon />View on explorer</Link></MenuItem>
+                      <MenuItem><Link href={
+                        chainId === 3 ? (
+                          'https://ropsten.etherscan.io/address/' + account
+                        ) :
+                          'https://etherscan.io/address/' + account
+                        } isExternal><ExternalLinkIcon />View on explorer</Link></MenuItem>
                       <MenuDivider />
                       <MenuItem onClick={() => disconnect()}>Disconnect</MenuItem>
                     </MenuList>
