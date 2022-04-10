@@ -56,9 +56,24 @@ function App() {
   const [appError, setAppError] = useState("");
   const [balance, setBalance] = useState(0);
   const [balance2, setBalance2] = useState("...");
-  const [value, setValue] = React.useState("");
+  const [value, setValue] = useState("");
+  const [acmeValue, setACMEValue] = useState(0);
 
-  const handleChange = (event) => setValue(event.target.value);
+  const handleChange = (event) => {
+    setValue(event.target.value);
+    calculateACMEValue(event.target.value);
+  };
+
+  const calculateACMEValue = (v) => {
+    let val = Number(v) || 0;
+    if (val > balance) {
+      setAppError("Not enough WFCT");
+    } else {
+      setAppError("");
+    }
+    const pow = new BigNumber('10').pow(new BigNumber(8));
+    setACMEValue(web3BNToFloatString(val*5*1e8, pow, 0, BigNumber.ROUND_DOWN));
+  }
 
   const CircleIcon = (props) => (
     <Icon viewBox='0 0 200 200' {...props}>
@@ -67,7 +82,7 @@ function App() {
         d='M 100, 100 m -75, 0 a 75,75 0 1,0 150,0 a 75,75 0 1,0 -150,0'
       />
     </Icon>
-  )
+  );
 
   const setProvider = (type) => {
     window.localStorage.setItem("provider", type);
@@ -81,9 +96,9 @@ function App() {
   const getBalance = (address) => {
     const contract = getContract(library, ERC20ABI, address);
     contract.methods.balanceOf(account).call().then(balance_ => {
-      const pow = new BigNumber('10').pow(new BigNumber(8))
-      setBalance(web3BNToFloatString(balance_, pow, 8, BigNumber.ROUND_DOWN))
-      setBalance2(web3BNToFloatString(balance_, pow, 2, BigNumber.ROUND_DOWN))
+      const pow = new BigNumber('10').pow(new BigNumber(8));
+      setBalance(web3BNToFloatString(balance_, pow, 8, BigNumber.ROUND_DOWN));
+      setBalance2(web3BNToFloatString(balance_, pow, 2, BigNumber.ROUND_DOWN));
     })
   };
 
@@ -187,19 +202,37 @@ function App() {
                 <Text fontSize='2xl' my={4} color='gray'>How much WFCT do you want to convert?</Text>
                 <Input onChange={handleChange} value={value} variant='filled' placeholder='Amount of tokens' size='lg' style={{ maxWidth: '400px', width: '100%' }} />
                 <p>
-                  <Link color='#3182ce' onClick={() => setValue(balance)}><Text my={2} fontSize='sm'>Available balance: {balance} WFCT</Text></Link>
+                  <Link color='#3182ce' onClick={() => { setValue(balance); calculateACMEValue(balance); }}><Text my={2} fontSize='sm'>Available balance: {balance} WFCT</Text></Link>
                 </p>
               </Box>
-              <Box px={15}>
-                <Text fontSize='2xl' my={4} color='gray'>Where to send ACME?</Text>
-                <Input variant='filled' placeholder='Accumulate ACME token account' size='lg' style={{ maxWidth: '400px', width: '100%' }} />
-                <p>
-                  <Link color='#3182ce' isExternal href="https://docs.accumulatenetwork.io"><Text my={2} fontSize='sm'>How to generate ACME token account<ExternalLinkIcon ml={1} mb={1} /></Text></Link>
-                </p>
-              </Box>
-              <Box p={15}>
-                <Button size='lg' colorScheme='teal' mb={3} disabled>Convert</Button>
-              </Box>
+              {!appError ? (
+                <div>
+                <Box px={15}>
+                  <Alert status='info' justifyContent='center' style={{ maxWidth: '400px', width: '100%', marginLeft: 'auto', marginRight: 'auto' }}>
+                    <AlertIcon />
+                    You will receive <Text ml={1}><strong>{acmeValue} ACME</strong></Text>
+                  </Alert>
+                </Box>
+                <Box px={15}>
+                  <Text fontSize='2xl' my={4} color='gray'>Where to send ACME?</Text>
+                  <Input variant='filled' placeholder='Accumulate ACME token account' size='lg' style={{ maxWidth: '400px', width: '100%' }} />
+                  <p>
+                    <Link color='#3182ce' isExternal href="https://docs.accumulatenetwork.io"><Text my={2} fontSize='sm'>How to generate ACME token account<ExternalLinkIcon ml={1} mb={1} /></Text></Link>
+                  </p>
+                </Box>
+                <Box p={15}>
+                  <Button size='lg' colorScheme='teal' mb={3} disabled>Burn WFCT</Button>
+                </Box>
+                </div>
+              ) : 
+                <Box px={15}>
+                  <Alert status='error' justifyContent='center' style={{ maxWidth: '400px', width: '100%', marginLeft: 'auto', marginRight: 'auto' }}>
+                    <AlertIcon />
+                    {appError}
+                  </Alert>
+                </Box>            
+              }
+
             </VStack>
           }
           {error && error.message ? (
@@ -207,15 +240,6 @@ function App() {
               <AlertIcon />
               <AlertTitle mr={2}>MetaMask Error</AlertTitle>
               <AlertDescription>{error.message}</AlertDescription>
-            </Alert>
-          ) :
-            null
-          }
-          {appError ? (
-            <Alert status='error' justifyContent='center'>
-              <AlertIcon />
-              <AlertTitle mr={2}>Application Error</AlertTitle>
-              <AlertDescription>{appError}</AlertDescription>
             </Alert>
           ) :
             null
