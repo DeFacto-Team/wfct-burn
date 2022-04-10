@@ -17,7 +17,11 @@ import {
   MenuList,
   MenuDivider,
   Link,
-  Input
+  Input,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription
 } from '@chakra-ui/react';
 
 import { CopyIcon, ExternalLinkIcon } from '@chakra-ui/icons'
@@ -34,7 +38,7 @@ import logo from './logo.svg';
 
 function App() {
 
-  let contract = [];
+  const contract = [];
   contract[1] = '0x415acc3c6636211e67e248dc28400b452acefa68';
   contract[3] = '0x003c29cf67bc98a978cf97a2893b122f7a798239';
 
@@ -44,10 +48,11 @@ function App() {
     deactivate,
     library,
     active,
-    chainId
+    chainId,
+    error
   } = useWeb3React();
 
-  const [error, setError] = useState("");
+  const [appError, setAppError] = useState("");
   const [balance, setBalance] = useState(0);
   const [balance2, setBalance2] = useState(0);
   const [value, setValue] = React.useState("");
@@ -68,8 +73,8 @@ function App() {
   };
 
   const refreshState = () => {
+    setAppError("");
     window.localStorage.setItem("provider", undefined);
-    setError("");
   };
 
   const getBalance = (address) => {
@@ -92,8 +97,8 @@ function App() {
   };
 
   const connect = () => {
-      activate(connectors.injected);
-      setProvider("injected");
+    activate(connectors.injected);
+    setProvider("injected");
   }
 
   useEffect(() => {
@@ -126,19 +131,19 @@ function App() {
             <Spacer />
             <Box align='right'>
               {!active ? (
-                <Button size='lg' colorScheme='gray' onClick={() => connect()}>Connect Wallet</Button>
+                <Button size='lg' colorScheme='gray' onClick={() => connect()} mb={3}>Connect Wallet</Button>
               ) :
                 <div>
-                <Button onClick={() => setValue(balance)} size='lg' colorScheme='gray' variant='outline' mb={3}>{balance2} WFCT</Button>
-                <Menu>
-                  <MenuButton as={Button} size='lg' colorScheme='gray' mb={3} ml={3} leftIcon={<CircleIcon color='#48BB78' />}>{account ? truncateAddress(account) : "Connected"}</MenuButton>
-                  <MenuList className="address-menu">
-                    <MenuItem onClick={() => {navigator.clipboard.writeText(account)}}><CopyIcon />Copy address</MenuItem>
-                    <MenuItem><Link href={'https://etherscan.io/address/' + account} isExternal><ExternalLinkIcon />View on explorer</Link></MenuItem>
-                    <MenuDivider />
-                    <MenuItem onClick={() => disconnect()}>Disconnect</MenuItem>
-                  </MenuList>
-                </Menu>
+                  <Button onClick={() => setValue(balance)} size='lg' colorScheme='gray' variant='outline' mb={3}>{balance2} WFCT</Button>
+                  <Menu>
+                    <MenuButton as={Button} size='lg' colorScheme='gray' mb={3} ml={3} leftIcon={<CircleIcon color='#48BB78' />}>{account ? truncateAddress(account) : "Connected"}</MenuButton>
+                    <MenuList className="address-menu">
+                      <MenuItem onClick={() => {navigator.clipboard.writeText(account)}}><CopyIcon />Copy address</MenuItem>
+                      <MenuItem><Link href={'https://etherscan.io/address/' + account} isExternal><ExternalLinkIcon />View on explorer</Link></MenuItem>
+                      <MenuDivider />
+                      <MenuItem onClick={() => disconnect()}>Disconnect</MenuItem>
+                    </MenuList>
+                  </Menu>
                 </div>
               }
             </Box>
@@ -174,9 +179,20 @@ function App() {
             </VStack>
           }
           {error && error.message ? (
-            <Box>
-              <Text color='red'>{error.message}</Text>
-            </Box>
+            <Alert status='error' justifyContent='center'>
+              <AlertIcon />
+              <AlertTitle mr={2}>MetaMask Error</AlertTitle>
+              <AlertDescription>{error.message}</AlertDescription>
+            </Alert>
+          ) :
+            null
+          }
+          {appError ? (
+            <Alert status='error' justifyContent='center'>
+              <AlertIcon />
+              <AlertTitle mr={2}>Application Error</AlertTitle>
+              <AlertDescription>{appError}</AlertDescription>
+            </Alert>
           ) :
             null
           }
