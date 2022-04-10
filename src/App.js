@@ -144,7 +144,9 @@ function App() {
           <Box>
           <Flex>
             <Box>
-              <img src={logo} className="logo" alt="Logo" />
+              <Link href="/">
+                <img src={logo} className="logo" alt="Logo" />
+              </Link>
             </Box>
             <Spacer />
             <Box align='right' className="menu">
