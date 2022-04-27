@@ -143,9 +143,12 @@ function App() {
   const handleApprove = (address = tokenContract, spender = lockerContract) => {
     const contract = getContract(library, ERC20ABI, address);
     const maxApproval = new BigNumber(2).pow(256).minus(1);
-    contract.methods.approve(spender, maxApproval).send({from: account}).then(res_ => {
-      setIsApproving(res_);
-    })
+    setIsApproving(true);
+    contract.methods.approve(spender, maxApproval).send({from: account}).then(_ => {
+      window.location.reload(false);
+    }).catch(error => {
+      setIsApproving(false);
+    });
   };
 
   const handleBurn = () => {
@@ -273,6 +276,12 @@ function App() {
                 <Heading as='h1' isTruncated>🔥 Burn WFCT</Heading>
               </Box>
               <Box px={15}>
+                <Alert status='warning' justifyContent='center'>
+                  <AlertIcon />
+                  <AlertDescription>Use Google Chrome and MetaMask for the best experience.</AlertDescription>
+                </Alert>
+              </Box>
+              <Box px={15}>
                 <Text fontSize='2xl' my={4} color='gray'>How much WFCT do you want to convert?</Text>
                 <Input onChange={handleChange} value={value} variant='filled' placeholder='Amount of tokens' size='lg' style={{ maxWidth: '400px', width: '100%' }} />
                 <p>
@@ -295,7 +304,7 @@ function App() {
                   </p>
                 </Box>
                 <Box p={15}>
-                  <Button size='lg' colorScheme='teal' mb={3} ml={2} mr={2} onClick={() => handleApprove()} disabled={compare(allowance, value) || isApproving || chainId === 1}>{!compare(allowance, value) ? "Approve WFCT" : "Approved"}</Button>
+                  <Button size='lg' colorScheme='teal' mb={3} ml={2} mr={2} onClick={() => handleApprove()} disabled={compare(allowance, value) || isApproving || chainId === 1}>{isApproving ? "Approving..." : (!compare(allowance, value) ? "Approve WFCT" : "Approved")}</Button>
                   <Button size='lg' colorScheme='teal' mb={3} ml={2} mr={2} onClick={() => handleBurn()} disabled={!compare(allowance, value) || isApproving || getAmount(value) === 0 || acmeAddress === ""}>Burn WFCT</Button>
                 </Box>
                 </div>
