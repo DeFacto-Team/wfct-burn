@@ -34,6 +34,7 @@ import { truncateAddress, web3BNToFloatString } from "./utils";
 import BigNumber from 'bignumber.js'
    
 import ERC20ABI from './abi-erc20.json'
+import LockerABI from './abi-locker.json'
 
 import logo from './logo.svg';
 
@@ -42,6 +43,17 @@ function App() {
   const contract = [];
   contract[1] = '0x415acc3c6636211e67e248dc28400b452acefa68';
   contract[3] = '0x003c29cf67bc98a978cf97a2893b122f7a798239';
+  contract[1337] = '0xa1B34A6B92FC585b0e0B63CdC82883Ff49290663';
+
+  const contract2 = [];
+  contract2[1] = '0x0000000000000000000000000000000000000000';
+  contract2[3] = '0x91711974fd1258dac32218a2d1c16bb3cc02ffb7';
+  contract2[1337] = '0x8A52060B01c21324d287E3f50CD0bA45b1166786';
+
+  const explorer = [];
+  explorer[1] = "https://etherscan.io";
+  explorer[3] = "https://ropsten.etherscan.io";
+  explorer[1337] = "";
 
   const {
     account,
@@ -58,16 +70,27 @@ function App() {
   const [balance2, setBalance2] = useState("...");
   const [value, setValue] = useState("");
   const [acmeValue, setACMEValue] = useState(0);
+  const [acmeAddress, setACMEAddress] = useState("");
+  const [symbol, setSymbol] = useState("");
+  const [allowance, setAllowance] = useState(0);
+  const [isApproving, setIsApproving] = useState(false);
+  const [tokenContract, setTokenContract] = useState("");
+  const [lockerContract, setLockerContract] = useState("");
+  const [explorerURL, setExplorerURL] = useState("");
 
   const handleChange = (event) => {
     setValue(event.target.value);
     calculateACMEValue(event.target.value);
   };
 
+  const handleChangeACME = (event) => {
+    setACMEAddress(event.target.value);
+  };
+
   const calculateACMEValue = (v) => {
     let val = Number(v) || 0;
     if (val > balance) {
-      setAppError("Not enough WFCT");
+      setAppError("Not enough tokens");
     } else {
       setAppError("");
     }
@@ -95,6 +118,9 @@ function App() {
 
   const getBalance = (address) => {
     const contract = getContract(library, ERC20ABI, address);
+    contract.methods.symbol().call().then(name_ => {
+      setSymbol(name_);
+    })
     contract.methods.balanceOf(account).call().then(balance_ => {
       const pow = new BigNumber('10').pow(new BigNumber(8));
       setBalance(web3BNToFloatString(balance_, pow, 8, BigNumber.ROUND_DOWN));
@@ -102,11 +128,32 @@ function App() {
     })
   };
 
+  const getAllowance = (address, spender) => {
+    const contract = getContract(library, ERC20ABI, address);
+    contract.methods.allowance(account, spender).call().then(amount_ => {
+      setAllowance(amount_);
+    })
+  };
+
   const getContract = (library, abi, address) => {
     const web3 = new Web3(library.provider);
     return new web3.eth.Contract(abi, address)
   };
-  
+
+  const handleApprove = (address = tokenContract, spender = lockerContract) => {
+    const contract = getContract(library, ERC20ABI, address);
+    const maxApproval = new BigNumber(2).pow(256).minus(1);
+    contract.methods.approve(spender, maxApproval).send({from: account}).then(res_ => {
+      setIsApproving(res_);
+    })
+  };
+
+  const handleBurn = () => {
+    const contract = getContract(library, LockerABI, lockerContract);
+    const amountBig = new BigNumber(value, 10)*1e8;
+    contract.methods.burn(amountBig, acmeAddress).send({from: account})
+  };
+
   const disconnect = () => {
     refreshState();
     deactivate();
@@ -117,15 +164,36 @@ function App() {
     setProvider("injected");
   }
 
+  const compare = (allowance, value) => {
+    let amount = getAmount(value);
+    if (allowance > amount) {
+      return true;
+    }
+    return false;
+  }
+
+  const getAmount = (value) => {
+    let amount = 0;
+    if (value !== "") {
+      amount = parseFloat(value) || 0;
+    }
+    return amount;
+  }
+
   useEffect(() => {
     setBalance(0);
     setBalance2("...");
+    setSymbol("");
     if (account) {
       let cid = 1;
       if (chainId) {
         cid = chainId;
       }
+      setTokenContract(contract[cid]);
+      setLockerContract(contract2[cid]);
+      setExplorerURL(explorer[cid]);
       getBalance(contract[cid]);
+      getAllowance(contract[cid], contract2[cid]);
     }
   }, [account, chainId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -154,6 +222,13 @@ function App() {
                 <Button size='lg' colorScheme='gray' onClick={() => connect()} mb={3}>Connect Wallet</Button>
               ) :
                 <div>
+                  {chainId === 1337 ? (
+                    <Tooltip label='You are connected to localhost' fontSize='md'>
+                      <Button size='lg' colorScheme='orange' variant='outline' mb={3}>Localhost</Button>
+                    </Tooltip>
+                  ) :
+                    null
+                  }
                   {chainId === 3 ? (
                     <Tooltip label='You are connected to testnet' fontSize='md'>
                       <Button size='lg' colorScheme='orange' variant='outline' mb={3}>Ropsten Testnet</Button>
@@ -161,26 +236,23 @@ function App() {
                   ) :
                     null
                   }
-                  <Tooltip label='View in explorer' fontSize='md'>
-                    <Link href={
-                          chainId === 3 ? (
-                            'https://ropsten.etherscan.io/token/' + contract[3] + '?a=' + account
-                          ) :
-                            'https://etherscan.io/token/' + contract[1] + '?a=' + account
-                          } isExternal>
-                      <Button size='lg' colorScheme='gray' variant='outline' mb={3} ml={chainId === 3 ? ( 3 ) : null}>{balance2} WFCT<ExternalLinkIcon ml={2} /></Button>
-                    </Link>
-                  </Tooltip>
+                    {explorerURL === "" ? (
+                      <Button size='lg' colorScheme='gray' variant='outline' mb={3} ml={3}>{balance2} {symbol}</Button>
+                    ) :
+                      <Tooltip label='View in explorer' fontSize='md'>
+                        <Link href={explorerURL + '/token/' + tokenContract + '?a=' + account} isExternal>
+                          <Button size='lg' colorScheme='gray' variant='outline' mb={3} ml={chainId === 3 ? ( 3 ) : null}>{balance2} {symbol}<ExternalLinkIcon ml={2} /></Button>
+                        </Link>
+                      </Tooltip>
+                    }
                   <Menu>
                     <MenuButton as={Button} size='lg' colorScheme='gray' mb={3} ml={3} leftIcon={<CircleIcon color='#48BB78' />}>{account ? truncateAddress(account) : "Connected"}</MenuButton>
                     <MenuList className="address-menu">
                       <MenuItem onClick={() => {navigator.clipboard.writeText(account)}}><CopyIcon />Copy address</MenuItem>
-                      <MenuItem><Link href={
-                        chainId === 3 ? (
-                          'https://ropsten.etherscan.io/address/' + account
-                        ) :
-                          'https://etherscan.io/address/' + account
-                        } isExternal><ExternalLinkIcon />View on explorer</Link></MenuItem>
+                      {explorerURL !== "" ? (
+                        <MenuItem><Link href={explorerURL + '/address/' + account} isExternal><ExternalLinkIcon />View on explorer</Link></MenuItem>
+                      ) : null
+                      }
                       <MenuDivider />
                       <MenuItem onClick={() => disconnect()}>Disconnect</MenuItem>
                     </MenuList>
@@ -217,13 +289,14 @@ function App() {
                 </Box>
                 <Box px={15}>
                   <Text fontSize='2xl' my={4} color='gray'>Where to send ACME?</Text>
-                  <Input variant='filled' placeholder='Accumulate ACME token account' size='lg' style={{ maxWidth: '400px', width: '100%' }} />
+                  <Input onChange={handleChangeACME} value={acmeAddress} variant='filled' placeholder='Accumulate ACME token account' size='lg' style={{ maxWidth: '400px', width: '100%' }} />
                   <p>
                     <Link color='#3182ce' isExternal href="https://docs.accumulatenetwork.io"><Text my={2} fontSize='sm'>How to generate ACME token account<ExternalLinkIcon ml={1} mb={1} /></Text></Link>
                   </p>
                 </Box>
                 <Box p={15}>
-                  <Button size='lg' colorScheme='teal' mb={3} disabled>Burn WFCT</Button>
+                  <Button size='lg' colorScheme='teal' mb={3} ml={2} mr={2} onClick={() => handleApprove()} disabled={compare(allowance, value) || isApproving || chainId === 1}>{!compare(allowance, value) ? "Approve WFCT" : "Approved"}</Button>
+                  <Button size='lg' colorScheme='teal' mb={3} ml={2} mr={2} onClick={() => handleBurn()} disabled={!compare(allowance, value) || isApproving || getAmount(value) === 0 || acmeAddress === ""}>Burn WFCT</Button>
                 </Box>
                 </div>
               ) : 
