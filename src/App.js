@@ -47,8 +47,8 @@ function App() {
 
   const contract2 = [];
   contract2[1] = '0x0000000000000000000000000000000000000000';
-  contract2[3] = '0x91711974fd1258dac32218a2d1c16bb3cc02ffb7';
-  contract2[1337] = '0x8A52060B01c21324d287E3f50CD0bA45b1166786';
+  contract2[3] = '0x35C342B8E213D1F72135A1d06C500633a13076b1';
+  contract2[1337] = '0xee2033862A583DbF2ca97D045e0802D06B8B2D45';
 
   const explorer = [];
   explorer[1] = "https://etherscan.io";
@@ -154,7 +154,9 @@ function App() {
   const handleBurn = () => {
     const contract = getContract(library, LockerABI, lockerContract);
     const amountBig = new BigNumber(value, 10)*1e8;
-    contract.methods.burn(amountBig, acmeAddress).send({from: account})
+    contract.methods.burn(amountBig, acmeAddress).send({from: account}).then(_ => {
+      window.location.reload(false);
+    })
   };
 
   const disconnect = () => {
