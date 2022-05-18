@@ -46,7 +46,7 @@ function App() {
   contract[1337] = '0xa1B34A6B92FC585b0e0B63CdC82883Ff49290663';
 
   const contract2 = [];
-  contract2[1] = '0x0000000000000000000000000000000000000000';
+  contract2[1] = '0xad204C28bd847077dC3132b43087AFf10bDe21b7';
   contract2[3] = '0x35C342B8E213D1F72135A1d06C500633a13076b1';
   contract2[1337] = '0xee2033862A583DbF2ca97D045e0802D06B8B2D45';
 
@@ -306,7 +306,7 @@ function App() {
                   </p>
                 </Box>
                 <Box p={15}>
-                  <Button size='lg' colorScheme='teal' mb={3} ml={2} mr={2} onClick={() => handleApprove()} disabled={compare(allowance, value) || isApproving || chainId === 1}>{isApproving ? "Approving..." : (!compare(allowance, value) ? "Approve WFCT" : "Approved")}</Button>
+                  <Button size='lg' colorScheme='teal' mb={3} ml={2} mr={2} onClick={() => handleApprove()} disabled={compare(allowance, value) || isApproving}>{isApproving ? "Approving..." : (!compare(allowance, value) ? "Approve WFCT" : "Approved")}</Button>
                   <Button size='lg' colorScheme='teal' mb={3} ml={2} mr={2} onClick={() => handleBurn()} disabled={!compare(allowance, value) || isApproving || getAmount(value) === 0 || acmeAddress === ""}>Burn WFCT</Button>
                 </Box>
                 </div>
