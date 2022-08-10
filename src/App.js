@@ -142,7 +142,7 @@ function App() {
 
   const handleApprove = (address = tokenContract, spender = lockerContract) => {
     const contract = getContract(library, ERC20ABI, address);
-    const maxApproval = new BigNumber(2).pow(256).minus(1);
+    const maxApproval = new BigNumber(10, 10)*1e8*1000;
     setIsApproving(true);
     contract.methods.approve(spender, maxApproval).send({from: account}).then(_ => {
       window.location.reload(false);
